@@ -1,0 +1,11 @@
+---
+perl_modules:
+  - Cwd 
+  - File::Copy
+  - Getopt::Long
+  - File::Basename
+  - IO::Compress::Gzip
+  - IO::Uncompress::Gunzip
+  - Date::Calc
+
+git_repo: https://github.com/jorgesanchez-e/zabbix-partition-tables

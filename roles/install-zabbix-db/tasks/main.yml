@@ -1,0 +1,9 @@
+---
+# tasks file for install-db
+- name: Dactivating SELinux
+  selinux:
+    policy: targeted
+    state: permissive
+
+- import_tasks: CentOS-tasks.yml
+  when: ansible_distribution == "CentOS"

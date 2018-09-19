@@ -1,0 +1,50 @@
+- include_vars: CentOS-vars.yml
+
+- name: Adding Zabbix repository
+  become: true
+  become_method: sudo
+  become_user: root
+  tags: packages
+  yum_repository:
+    name: "{{ 'zabbix-' ~ zabbix_version }}"
+    description: "{{ 'zabbix repository for version ' ~  zabbix_version }}"
+    file: "{{ 'zabbix-' ~ zabbix_version }}"
+    baseurl: "{{ item }}"
+    enabled: yes
+  loop: "{{ zabbix_repos | json_query( zabbix_url_repo ) }}"
+  vars:
+    zabbix_url_repo: "versions[?version=='{{ zabbix_version }}'].url"
+
+- name: Importing Zabbix repository keys
+  become: true
+  become_method: sudo
+  become_user: root
+  tags: packages
+  rpm_key:
+    state: present
+    key: "{{ item }}"
+  loop: "{{ zabbix_repo_keys }}"
+
+- name: Install packages for CentOS 
+  become: true
+  become_method: sudo
+  become_user: root
+  tags: packages
+  yum:
+    name: "{{ packages }}"
+    state: present
+
+- name: Configuring php timezone with value php_timezone
+  become: true
+  become_method: sudo
+  become_user: root
+  tags: config
+  replace:
+    path: "{{ http_zabbix_conf }}"
+    regexp: '(\s+)#\s*php_value\s+date.timezone\s+[^\s]+\s*'
+    replace: "{{ '\\1php_value date.timezone ' ~ php_timezone ~ '\\n' }}"
+
+- name: Starting httpd
+  systemd:
+    name: httpd
+    state: started

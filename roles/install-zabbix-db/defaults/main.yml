@@ -1,0 +1,38 @@
+---
+# defaults file for install-db
+# postgres_sql_version var control which version of PostgreSQL will be installed
+# valid options are:
+# 10, 9.6, 9.5, 9.4 and 9.3
+# for more information: https://yum.postgresql.org/
+postgres_sql_version: "10"
+
+# zabbix_version var control which version of Zabbix will be installed
+# valid options are: 3.2 and 3.4
+# for more information: https://repo.zabbix.com/
+zabbix_version: "3.4"
+
+# Data access for zabbix database
+zabbix_db_name: "zabbix"
+zabbix_db_user: "zabbix"
+zabbix_db_pass: "zabbix"
+
+# Data for configuring and installing zabbix software
+zabbix_create_sql_file: "create.sql.gz"
+zabbix_server_conf_file: /etc/zabbix/zabbix_server.conf
+
+# PostgresSQL data to install and configure PostgreSQL engine
+postgres_ip: "127.0.0.1"
+postgres_port: "5431"
+postgres_user: postgres
+postgres_group: postgres
+
+# Data for download git repo for partition tables
+git_repo: "https://github.com/jorgesanchez-e/zabbix-partition-tables.git"
+git_dir: "/tmp/zabbix-partition-tables"
+git_perl_transform: "{{ git_dir }}/zabbix32-transform.pl"
+git_perl_auto_tables: "{{ git_dir }}/zabbix32-history-tables.pl"
+git_perl_auto_tables_file: "zabbix32-history-tables.pl"
+git_create_tablespaces: create_tablespaces.sql
+git_create_functions: create_functions.sql
+
+

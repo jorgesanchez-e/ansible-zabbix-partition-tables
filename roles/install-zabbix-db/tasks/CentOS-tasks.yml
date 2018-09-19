@@ -1,0 +1,355 @@
+---
+- include_vars: CentOS-vars.yml
+
+- name: Installing PostgreSQL repo 
+  become: true
+  become_method: sudo
+  become_user: root
+  tags: packages
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ postgres_repos | json_query( pg_url_repo ) }}"
+  vars:
+    pg_url_repo: "versions[?version=='{{ postgres_sql_version }}'].url"
+
+- name: Adding Zabbix repository
+  become: true
+  become_method: sudo
+  become_user: root
+  tags: packages
+  yum_repository:
+    name: "{{ 'zabbix-' ~ zabbix_version }}"
+    description: "{{ 'zabbix repository for version ' ~  zabbix_version }}"
+    file: "{{ 'zabbix-' ~ zabbix_version }}"
+    baseurl: "{{ item }}"
+    enabled: yes
+  loop: "{{ zabbix_repos | json_query( zabbix_url_repo ) }}"
+  vars:
+    zabbix_url_repo: "versions[?version=='{{ zabbix_version }}'].url"
+
+- name: Adding Zabbix repository for iksemel
+  become: true
+  become_method: sudo
+  become_user: root
+  tags: packages
+  yum_repository:
+    name: zabbix-non-suported
+    description: zabbix-non-supported-repo
+    file: zabbix-non-supported
+    baseurl: "{{ zabbix_repo_non_supported }}"
+    enabled: yes
+
+- name: Importing Zabbix repository keys
+  become: true
+  become_method: sudo
+  become_user: root
+  tags: packages
+  rpm_key:
+    state: present
+    key: "{{ item }}"
+  loop: "{{ zabbix_repo_keys }}"
+
+- name: Install init packages for CentOS 
+  become: true
+  become_method: sudo
+  become_user: root
+  tags: packages
+  yum:
+    name: "{{ init_packages }}"
+    state: present
+
+- name: Installing PostgreSQL packages for CentOS
+  become: true
+  become_method: sudo
+  become_user: root
+  tags: packages
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ postgres_repos | json_query( postgres_packages ) }}"
+  vars:
+   postgres_packages: "versions[?version=='{{ postgres_sql_version }}'].rpms" 
+
+- name: Installing zabbix db packages for CentOS 
+  become: true
+  become_method: sudo
+  become_user: root
+  tags: packages
+  yum:
+    name: "{{ zabbix_packages }}"
+    state: present
+
+- name: Installing Perl modules dependencies
+  become: true
+  become_user: root
+  become_method: sudo
+  tags: packages
+  cpanm:
+    system_lib: yes
+    name: "{{ item }}"
+  loop: "{{ perl_modules }}"
+
+- name: Initialating PostgreSQL directory cluster
+  become: true
+  become_method: sudo
+  become_user: root
+  tags: pg_init
+  shell: "{{ item ~ ' initdb' }}"
+  loop: "{{ postgres_repos | json_query( setup_cluster ) }}"
+  vars:
+    setup_cluster: "versions[?version=='{{ postgres_sql_version }}'].init"
+
+- name: Configuring ip in postgresql.conf file
+  become: true
+  become_method: sudo
+  become_user: postgres
+  tags: pg_init
+  lineinfile:
+    path: "{{ item }}"
+    firstmatch: yes
+    insertafter:  '^#listen_addresses'
+    line: "listen_addresses = '{{ postgres_ip }}'"
+    #line: "{{ "'listen_addresses = '" ~ postgres_ip ~ "'" }}"
+  loop: "{{ postgres_repos | json_query( pg_conf_file ) }}"
+  vars:
+    pg_conf_file: "versions[?version=='{{ postgres_sql_version }}'].pg_conf"
+
+- name: Configuring port in postgresql.conf file
+  tags: pg_init
+  lineinfile:
+    path: "{{ item }}"
+    firstmatch: yes
+    insertafter:  '^#port = 5432'
+    line: "port = {{ postgres_port }}"
+  loop: "{{ postgres_repos | json_query( pg_conf_file ) }}"
+  vars:
+    pg_conf_file: "versions[?version=='{{ postgres_sql_version }}'].pg_conf"
+
+- name: Adding config to pg_hba.conf
+  become: true
+  become_method: sudo
+  become_user: postgres
+  tags: pg_init
+  lineinfile:
+    path: "{{ item }}"
+    firstmatch: yes
+    insertafter:  '^#\s*IPv4\s+local\s+connections:\s*$'
+    line: "host    {{ zabbix_db_name }}    {{ zabbix_db_user }}    {{ postgres_ip }}/32     md5"
+  loop: "{{ postgres_repos | json_query( pg_hba_file ) }}"
+  vars:
+    pg_hba_file: "versions[?version=='{{ postgres_sql_version }}'].pg_hba"
+
+- name: Starting PostgreSQL
+  become: true
+  become_method: sudo
+  become_user: root
+  tags: pg_init
+  systemd:
+    enabled: yes
+    name: "{{ item }}"
+    state: started
+  loop: "{{ postgres_repos | json_query( pg_service_name ) }}"
+  vars:
+    pg_service_name: "versions[?version=='{{ postgres_sql_version }}'].pg_service_name"
+
+- name: Creating zabbix database user
+  become: true
+  become_method: sudo
+  become_user: postgres
+  tags: setup-db
+  postgresql_user:
+    port: "{{ postgres_port }}"
+    db: postgres
+    no_password_changes: yes
+    encrypted: yes
+    name: "{{ zabbix_db_user }}"
+    password: "{{ zabbix_db_name }}"
+
+- name: Creating zabbix database
+  become: true
+  become_method: sudo
+  become_user: postgres
+  tags: setup-db
+  postgresql_db:
+    port: "{{ postgres_port }}"
+    login_user: postgres  
+    name: "{{ zabbix_db_name }}"
+    owner: "{{ zabbix_db_user }}"
+
+- name: Changin user and group owner for dir data tablespace
+  become: true
+  become_method: sudo
+  become_user: root
+  tags: setup-db
+  file:
+    path: "{{ pgsql_data_tb }}"
+    owner: "{{ postgres_user }}"
+    group: "{{ postgres_group }}"
+    mode: 0755
+
+- name: Changin user and group owner for dir index tablespace
+  become: true
+  become_method: sudo
+  become_user: root
+  tags: setup-db
+  file:
+    path: "{{ pgsql_index_tb }}"
+    owner: "{{ postgres_user }}"
+    group: "{{ postgres_group }}"
+    mode: 0755
+
+- name: Cloning git repo
+  become: yes
+  become_method: sudo
+  become_user: postgres
+  tags: git
+  git:
+    repo: "{{ git_repo }}"
+    dest: "{{ git_dir }}"
+
+- name: Making executable perl files
+  become: yes
+  become_method: sudo
+  become_user: postgres
+  tags: git
+  file:
+    path: "{{ item }}"
+    mode: 0755
+  loop:
+    - "{{ git_perl_transform }}"
+    - "{{ git_perl_auto_tables }}"
+
+- name: Figuring out where is crate.sql.gz file
+  become: yes
+  become_method: sudo
+  become_user: root
+  #tags: git
+  tags: test
+  shell: dirname $(rpm -ql zabbix-server-pgsql | egrep create.sql.gz) warn=False
+  register: create_sql_file_dir
+
+#- debug: msg={{create_sql_file_dir.stdout}}
+
+- name: Executing transform perl script
+  become: yes
+  become_method: sudo
+  become_user: root
+  tags: transform
+  shell: "{{ git_perl_transform }} --file {{ create_sql_file_dir.stdout }}/{{ zabbix_create_sql_file }} --data={{ pgsql_data_tb }} --index={{ pgsql_index_tb }}"
+
+- name: Creating tablespaces
+  become: yes
+  become_method: sudo
+  become_user: root
+  tags: transform
+  shell: cat {{ create_sql_file_dir.stdout }}/{{ git_create_tablespaces }} | sudo -u {{ postgres_user }} psql --port {{ postgres_port }}
+
+- name: Filling up zabbix database
+  become: yes
+  become_method: sudo
+  become_user: root
+  tags: tranform
+  shell: zcat {{ create_sql_file_dir.stdout }}/{{ zabbix_create_sql_file }} | sudo -u zabbix psql --port {{ postgres_port }}
+
+- name: Creating plpgsql lang into zabbix db
+  become: yes
+  become_method: sudo
+  become_user: postgres
+  tags: transform
+  postgresql_lang:
+    db: "{{ zabbix_db_name }}"
+    lang: plpgsql
+    port: "{{ postgres_port }}"
+
+- name: Creating psql fucntions and triggers
+  become: yes
+  become_method: sudo
+  become_user: root
+  tags: tranform
+  shell: cat {{ create_sql_file_dir.stdout }}/{{ git_create_functions }} | sudo -u postgres psql {{ zabbix_db_name }} --port {{ postgres_port }}
+
+- name: Configuring zabbix server (commenting lines)
+  become: yes
+  become_method: sudo
+  become_user: root
+  tags: config_zabbix
+  replace:
+    path: "{{ zabbix_server_conf_file }}"
+    regexp: "{{ item.regexp }}"
+    replace: "{{ item.replace }}"
+  loop:
+    - { regexp: '^\s*DBHost\s*=([^\s]+)\s*$', replace: '# DBHost=\1' }
+    - { regexp: '^\s*DBName\s*=([^\s]+)\s*$', replace: '# DBName=\1' }
+    - { regexp: '^\s*DBUser\s*=([^\s]+)\s*$', replace: '# DBUser=\1' }
+    - { regexp: '^\s*DBPassword\s*=([^\s]+)\s*$', replace: '# DBPassword=\1' }
+    - { regexp: '^\s*DBPort\s*=([^\s]+)\s*$', replace: '# DBPort=\1' }
+
+- name:
+  become: yes
+  become_method: sudo
+  become_user: root
+  tags: config_zabbix
+  lineinfile:
+    path: "{{ zabbix_server_conf_file }}"
+    insertafter: EOF
+    line: "{{ item }}"
+  loop:
+    - "{{ 'DBHost=' ~ postgres_ip }}"
+    - "{{ 'DBName=' ~ zabbix_db_name }}" 
+    - "{{ 'DBUser=' ~ zabbix_db_user }}"
+    - "{{ 'DBPassword=' ~ zabbix_db_pass }}"
+    - "{{ 'DBPort=' ~ postgres_port }}"
+
+- name: Starting zabbix server
+  become: true
+  become_method: sudo
+  become_user: root
+  tags: services
+  systemd:
+    enabled: yes
+    state: started
+    name: zabbix-server
+
+- name: Starting zabbix agent
+  become: true
+  become_method: sudo
+  become_user: root
+  tags: services
+  systemd:
+    enabled: yes
+    state: started
+    name: zabbix-agent
+
+- name: Getting postgresql home path
+  become: yes
+  become_method: sudo
+  become_user: root
+  shell: "cat /etc/passwd | egrep postgres | cut -d: -f6"
+  register: postgres_user_home
+
+- name: Copying crontab files
+  become: true
+  become_method: sudo
+  become_user: root
+  tags: config
+  copy:
+    remote_src: yes
+    src: "{{ git_perl_auto_tables }}"
+    dest: "{{ postgres_user_home.stdout ~ '/' }}"
+    owner: "{{ postgres_user }}"
+    group: "{{ postgres_group }}"
+    mode: 0755
+
+- name: Adding cronjob for auto-tables
+  become: yes
+  become_method: sudo
+  become_user: "{{ postgres_user }}"
+  tags: config
+  cron:
+    name: zabbix-auto-tables
+    minute: 0
+    hour: 0
+    day: 25
+    job: "{{ postgres_user_home.stdout }}/{{ git_perl_auto_tables_file }} | psql zabbix --port {{ postgres_port }}"
+    

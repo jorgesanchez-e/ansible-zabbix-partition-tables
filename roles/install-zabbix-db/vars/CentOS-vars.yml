@@ -1,0 +1,112 @@
+---
+postgres_repos:
+  versions:
+    - version: '10'
+      version_suffix: '10'
+      url: https://download.postgresql.org/pub/repos/yum/10/redhat/rhel-7-x86_64/pgdg-centos10-10-2.noarch.rpm
+      rpms:
+        - postgresql10
+        - postgresql10-contrib
+        - postgresql10-libs
+        - postgresql10-server
+        - pgbouncer
+        - python-psycopg2
+      init: /usr/pgsql-10/bin/postgresql-10-setup
+      pg_hba: /var/lib/pgsql/10/data/pg_hba.conf
+      pg_conf: /var/lib/pgsql/10/data/postgresql.conf
+      pg_service_name: postgresql-10
+    - version: '9.6'
+      version_suffix: '96'
+      url: https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-7-x86_64/pgdg-centos96-9.6-3.noarch.rpm
+      rpms:
+        - postgresql96
+        - postgresql96-contrib
+        - postgresql96-libs
+        - postgresql96-server
+        - pgbouncer
+        - python-psycopg2
+      init: /usr/pgsql-9.6/bin/postgresql96-setup
+      pg_hba: /var/lib/pgsql/9.6/data/pg_hba.conf
+      pg_conf: /var/lib/pgsql/9.6/data/postgresql.conf
+      pg_service_name: postgresql-9.6.service
+    - version: '9.5'
+      version_suffix: '95'
+      url: https://download.postgresql.org/pub/repos/yum/9.5/redhat/rhel-7-x86_64/pgdg-centos95-9.5-3.noarch.rpm
+      rpms:
+        - postgresql95
+        - postgresql95-contrib
+        - postgresql95-libs
+        - postgresql95-server
+        - pgbouncer
+        - python-psycopg2
+      init: /usr/pgsql-9.5/bin/postgresql95-setup
+      pg_hba: /var/lib/pgsql/9.5/data/pg_hba.conf
+      pg_conf: /var/lib/pgsql/9.5/data/postgresql.conf
+      pg_service_name: postgresql-9.5.service
+    - version: '9.4'
+      version_suffix: '94'
+      url: https://download.postgresql.org/pub/repos/yum/9.4/redhat/rhel-7-x86_64/pgdg-centos94-9.4-3.noarch.rpm
+      rpms:
+        - postgresql94
+        - postgresql94-contrib
+        - postgresql94-libs
+        - postgresql94-server
+        - pgbouncer
+        - python-psycopg2
+      init: /usr/pgsql-9.4/bin/postgresql94-setup
+      pg_hba: /var/lib/pgsql/9.4/data/pg_hba.conf
+      pg_conf: /var/lib/pgsql/9.4/data/postgresql.conf
+      pg_service_name: postgresql-9.4.service
+    - version: '9.3'
+      version_suffix: '93'
+      url: https://download.postgresql.org/pub/repos/yum/9.3/redhat/rhel-7-x86_64/pgdg-centos93-9.3-3.noarch.rpm
+      rpms:
+        - postgresql93
+        - postgresql93-contrib
+        - postgresql93-libs
+        - postgresql93-server
+        - pgbouncer
+        - python-psycopg2
+      init: /usr/pgsql-9.3/bin/postgresql93-setup
+      pg_hba: /var/lib/pgsql/9.3/data/pg_hba.conf
+      pg_conf: /var/lib/pgsql/9.3/data/postgresql.conf
+      pg_service_name: postgresql-9.3.service
+    
+psql_cmd: /usr/bin/psql
+
+zabbix_repos:
+  versions:
+    - version: '3.2'
+      url: https://repo.zabbix.com/zabbix/3.2/rhel/7/x86_64/
+    - version: '3.4'
+      url: https://repo.zabbix.com/zabbix/3.4/rhel/7/x86_64/
+
+zabbix_repo_non_supported: https://repo.zabbix.com/non-supported/rhel/7/x86_64/
+
+zabbix_repo_keys:
+  - https://repo.zabbix.com/RPM-GPG-KEY-ZABBIX-A14FE591
+  - https://repo.zabbix.com/RPM-GPG-KEY-ZABBIX-79EA5ED4
+
+zabbix_packages:
+  - zabbix-server-pgsql
+  - zabbix-agent
+
+init_packages:
+  - gcc
+  - epel-release
+  - git
+  - yum-utils
+  - bash-completion
+  - perl-App-cpanminus
+
+perl_modules:
+  - Cwd
+  - File::Copy
+  - Getopt::Long
+  - File::Basename
+  - IO::Compress::Gzip
+  - IO::Uncompress::Gunzip
+  - Date::Calc
+
+pgsql_data_tb: /postgresql/zabbix/data
+pgsql_index_tb: /postgresql/zabbix/index
