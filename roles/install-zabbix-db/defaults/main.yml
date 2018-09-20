@@ -4,12 +4,12 @@
 # valid options are:
 # 10, 9.6, 9.5, 9.4 and 9.3
 # for more information: https://yum.postgresql.org/
-postgres_sql_version: "10"
+postgres_sql_version: "9.5"
 
 # zabbix_version var control which version of Zabbix will be installed
 # valid options are: 3.2 and 3.4
 # for more information: https://repo.zabbix.com/
-zabbix_version: "3.4"
+zabbix_version: "3.2"
 
 # Data access for zabbix database
 zabbix_db_name: "zabbix"
@@ -35,4 +35,5 @@ git_perl_auto_tables_file: "zabbix32-history-tables.pl"
 git_create_tablespaces: create_tablespaces.sql
 git_create_functions: create_functions.sql
 
-
+pgsql_data_tb: /postgresql/zabbix/data
+pgsql_index_tb: /postgresql/zabbix/index

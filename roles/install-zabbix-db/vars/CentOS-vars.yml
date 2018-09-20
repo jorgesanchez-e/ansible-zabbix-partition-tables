@@ -108,5 +108,3 @@ perl_modules:
   - IO::Uncompress::Gunzip
   - Date::Calc
 
-pgsql_data_tb: /postgresql/zabbix/data
-pgsql_index_tb: /postgresql/zabbix/index

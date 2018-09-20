@@ -135,7 +135,8 @@
     path: "{{ item }}"
     firstmatch: yes
     insertafter:  '^#\s*IPv4\s+local\s+connections:\s*$'
-    line: "host    {{ zabbix_db_name }}    {{ zabbix_db_user }}    {{ postgres_ip }}/32     md5"
+    #line: "host    {{ zabbix_db_name }}    {{ zabbix_db_user }}    {{ postgres_ip }}/32     md5"
+    line: "host    {{ zabbix_db_name }}    {{ zabbix_db_user }}    {{ postgres_ip | regex_search('(\\d+\\.\\d+\\.\\d+\\.)') ~ '0' }}/24     md5"
   loop: "{{ postgres_repos | json_query( pg_hba_file ) }}"
   vars:
     pg_hba_file: "versions[?version=='{{ postgres_sql_version }}'].pg_hba"
