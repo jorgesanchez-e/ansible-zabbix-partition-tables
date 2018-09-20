@@ -77,9 +77,9 @@ This script won't do following tasks:
 
    Following and example of how ansible looks like executing this playbook, be patient when it install packages it takes a time.
 
+[![asciicast](https://asciinema.org/a/202112.png)](https://asciinema.org/a/202112)
 
 
-   ![asciicast](https://asciinema.org/a/hGsJt9MJIdlTHJHsrE7OiVXQu.png)
 
 4. Go to **http://<your_ip>/zabbix** and finish Zabbix installation
 
