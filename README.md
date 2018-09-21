@@ -87,13 +87,13 @@ This script won't do following tasks:
 
 
 
-### keep in mind
+### Watch Out
 
 __postgres_ip__ variable has to be a database host ip because it will be used to config __postgresql.conf__ file and __pg_hba.conf__ file, ansible will try to parse that ip and use network part to put it into __pg_hba.conf__ file, then you have to keep the host for Zabbix server inside same network, furthermore that IP has to be configured into database host 
 
 
 
-## Pending and future completed tasks
+## Pending and future tasks
 
 ### May be it will be never implemented
 
